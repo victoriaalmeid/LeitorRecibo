@@ -34,9 +34,11 @@ import com.example.leitorrecibo.ui.components.StatItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
+fun HomeScreen(
+//    onOcrClick: () -> Unit,
+    onQrClick: () -> Unit,
+//    onAccessCodeClick: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -67,7 +69,6 @@ fun HomeScreen() {
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Título da seção
             Text(
                 text = "Como deseja extrair os dados?",
                 fontSize = 18.sp,
@@ -76,43 +77,40 @@ fun HomeScreen() {
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Card 1 - OCR
             ExtractionCard(
                 icon = "📸",
                 title = "Leitura por OCR",
                 description = "Tire uma foto da nota fiscal e extraia os dados automaticamente",
                 color = Color(0xFFE3F2FD),
                 iconColor = Color(0xFF1976D2),
-                onClick = { selectedOption = "OCR" }
+                onClick = {}
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 2 - QR Code
             ExtractionCard(
                 icon = "📱",
                 title = "Leitura por QR Code",
                 description = "Leia o QR Code presente na nota fiscal",
                 color = Color(0xFFE8F5E9),
                 iconColor = Color(0xFF388E3C),
-                onClick = { selectedOption = "QR Code" }
+                onClick = onQrClick
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 3 - Código de Acesso
             ExtractionCard(
                 icon = "🔢",
                 title = "Código de Acesso",
                 description = "Digite manualmente o código de 44 dígitos da NF-e",
                 color = Color(0xFFFFF3E0),
                 iconColor = Color(0xFFF57C00),
-                onClick = { selectedOption = "Código de Acesso" }
+                onClick = {}
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Card de estatísticas (mock)
+            // Card de estatísticas
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -153,22 +151,6 @@ fun HomeScreen() {
                     ) {
                         Text("Ver todas as notas", color = Color.White)
                     }
-                }
-            }
-
-            // Feedback de seleção (só para demonstrar)
-            selectedOption?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8EAF6))
-                ) {
-                    Text(
-                        text = "✅ $it selecionado - função em desenvolvimento",
-                        modifier = Modifier.padding(12.dp),
-                        fontSize = 12.sp,
-                        color = Color(0xFF1A237E)
-                    )
                 }
             }
         }
