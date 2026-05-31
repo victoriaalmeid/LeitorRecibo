@@ -116,7 +116,32 @@ fun QrCodeScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                Button(
+                    onClick = {
+                        currentImageUri?.let { uri ->
+                            isProcessing = true
 
+                            QRCodeExtractor(context, uri) { urlEncontrada ->
+                                isProcessing = false
+                                if (urlEncontrada != null) {
+                                    onDataExtracted(urlEncontrada)
+                                } else {
+                                    // ADICIONAMOS O TOAST AQUI PARA O USUÁRIO VER O ERRO
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Nenhum QR Code válido encontrado nesta imagem.",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    },
+                    enabled = currentImageUri != null,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
+                ) {
+                    Text("Processar Imagem")
+                }
             }
         }
     }
