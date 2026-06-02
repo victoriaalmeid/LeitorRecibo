@@ -1,4 +1,5 @@
 package com.example.leitorrecibo
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,15 +12,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.leitorrecibo.ui.screens.HomeScreen
+import com.example.leitorrecibo.ui.screens.NotasSalvas.NotasSalvasScreen
 import com.example.leitorrecibo.ui.screens.QrCodeScreen
-import com.example.leitorrecibo.ui.screens.result.ResultScreen
+import com.example.leitorrecibo.ui.screens.Result.ResultScreen
 import com.example.leitorrecibo.ui.theme.LeitorReciboTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LeitorReciboTheme() {
+            LeitorReciboTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -37,17 +39,9 @@ fun AppNavigation() {
 
     when (currentScreen) {
         "home" -> HomeScreen(
-//            onOcrClick = { currentScreen = "ocr" },
             onQrClick = { currentScreen = "qr" },
-//            onAccessCodeClick = { currentScreen = "access_code" }
+            onVerNotasClick = { currentScreen = "notas_salvas" } // LIGAÇÃO FEITA AQUI
         )
-//        "ocr" -> OcrScreen(
-//            onBack = { currentScreen = "home" },
-//            onDataExtracted = { data ->
-//                extractedData = data
-//                currentScreen = "result"
-//            }
-//        )
         "qr" -> QrCodeScreen(
             onBack = { currentScreen = "home" },
             onDataExtracted = { data ->
@@ -55,15 +49,12 @@ fun AppNavigation() {
                 currentScreen = "result"
             }
         )
-//        "access_code" -> AccessCodeScreen(
-//            onBack = { currentScreen = "home" },
-//            onDataExtracted = { data ->
-//                extractedData = data
-//                currentScreen = "result"
-//            }
-//        )
         "result" -> ResultScreen(
             data = extractedData ?: "Nenhum dado extraído",
+            onBack = { currentScreen = "home" }
+        )
+        // NOVA ROTA PARA O REPOSITÓRIO DE NOTAS
+        "notas_salvas" -> NotasSalvasScreen(
             onBack = { currentScreen = "home" }
         )
     }

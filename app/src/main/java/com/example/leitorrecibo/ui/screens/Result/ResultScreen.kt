@@ -1,4 +1,4 @@
-package com.example.leitorrecibo.ui.screens.result
+package com.example.leitorrecibo.ui.screens.Result
 
 import android.os.Handler
 import android.os.Looper

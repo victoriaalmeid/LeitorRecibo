@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,8 +30,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.leitorrecibo.ui.components.ExtractionCard
 import com.example.leitorrecibo.ui.components.StatItem
+import com.example.leitorrecibo.ui.screens.NotasSalvas.NotasSalvasViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +42,29 @@ fun HomeScreen(
 //    onOcrClick: () -> Unit,
     onQrClick: () -> Unit,
 //    onAccessCodeClick: () -> Unit
+    onVerNotasClick: () -> Unit,
+    viewModel: NotasSalvasViewModel = viewModel()
 ) {
+    // Observamos as notas salvas no banco de dados
+    val notas by viewModel.historicoNotas.collectAsState()
+
+    // Calculamos as estatísticas dinamicamente
+    val totalNotas = notas.size
+    val totalProdutos = notas.sumOf { it.produtos.size }
+
+    // Calcula o total gasto convertendo a String "R$ 20,00" para Double
+    val totalGasto = notas.sumOf { nota ->
+        nota.produtos.sumOf { produto ->
+            produto.preco
+                .replace("R$", "")
+                .replace(".", "") // Remove pontos de milhar se houver
+                .replace(",", ".") // Troca vírgula decimal por ponto
+                .trim()
+                .toDoubleOrNull() ?: 0.0
+        }
+    }
+
+    val totalFormatado = String.format(Locale("pt", "BR"), "R$ %.2f", totalGasto)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -134,15 +160,15 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        StatItem(number = "0", label = "Notas salvas")
-                        StatItem(number = "0", label = "Produtos")
-                        StatItem(number = "R$ 0,00", label = "Total gasto")
+                        StatItem(number = totalNotas.toString(), label = "Notas salvas")
+                        StatItem(number = totalProdutos.toString(), label = "Produtos")
+                        StatItem(number = totalFormatado, label = "Total gasto")
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { /* Futuramente: ver notas salvas */ },
+                        onClick = onVerNotasClick, // NOVO: Chama a navegação aqui
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF1A237E)

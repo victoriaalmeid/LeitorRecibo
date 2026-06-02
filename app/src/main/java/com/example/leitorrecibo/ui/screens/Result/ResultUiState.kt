@@ -1,4 +1,4 @@
-package com.example.leitorrecibo.ui.screens.result
+package com.example.leitorrecibo.ui.screens.Result
 
 import com.example.leitorrecibo.domain.models.Produto
 
