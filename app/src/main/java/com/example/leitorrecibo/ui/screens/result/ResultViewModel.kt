@@ -18,7 +18,7 @@ class ResultViewModel(application: Application) : AndroidViewModel(application) 
     private val _uiState = MutableStateFlow(ResultUiState())
     val uiState: StateFlow<ResultUiState> = _uiState.asStateFlow()
 
-    private val produtoDao = AppDatabase.getDatabase(application).produtoDao()
+    private val notaFiscalDao = AppDatabase.getDatabase(application).notaFiscalDao()
 
     init {
         iniciarProcessamento()
@@ -54,7 +54,7 @@ class ResultViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.update { it.copy(progresso = progresso, mensagemStatus = mensagem) }
     }
 
-    fun onProdutosExtraidos(produtos: List<Produto>) {
+    fun onProdutosExtraidos(produtos: List<Produto>, urlNota: String) {
         if (produtos.isEmpty() || _uiState.value.dadosSalvos) return
 
         viewModelScope.launch {
@@ -62,8 +62,8 @@ class ResultViewModel(application: Application) : AndroidViewModel(application) 
             atualizarProgresso(1f, "Nota lida com sucesso!")
             delay(600)
 
-            // Salva no banco de dados e finaliza loading
-            produtoDao.inserirVarios(produtos)
+            // Salva a Nota e os Produtos juntos (numa transação) para evitar erro de Foreign Key
+            notaFiscalDao.salvarNotaComProdutos(urlNota, produtos)
 
             _uiState.update {
                 it.copy(

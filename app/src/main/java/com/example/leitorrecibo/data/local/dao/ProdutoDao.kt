@@ -13,10 +13,10 @@ interface ProdutoDao {
     suspend fun inserirVarios(produtos: List<Produto>)
 
     // Busca todos os produtos guardados (para mostrar no ecrã inicial depois)
-    @Query("SELECT * FROM tabela_produtos")
+    @Query("SELECT * FROM produtos")
     suspend fun buscarTodos(): List<Produto>
 
     // Apaga tudo (útil para testes ou botão de reset)
-    @Query("DELETE FROM tabela_produtos")
+    @Query("DELETE FROM produtos")
     suspend fun limparTudo()
 }

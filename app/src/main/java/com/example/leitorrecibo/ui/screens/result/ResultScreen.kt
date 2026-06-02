@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,7 +55,7 @@ fun ResultScreen(
                 title = { Text("Dados da Nota", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A237E))
@@ -149,8 +149,8 @@ fun ResultScreen(
                                                     coroutineScope.launch {
                                                         val produtosEncontrados = extrairDadosDoHtml(cleanHtml)
                                                         if (produtosEncontrados.isNotEmpty()) {
-                                                            // DELEGA PARA O VIEWMODEL
-                                                            viewModel.onProdutosExtraidos(produtosEncontrados)
+                                                            // DELEGA PARA O VIEWMODEL COM A URL
+                                                            viewModel.onProdutosExtraidos(produtosEncontrados, urlSegura)
                                                         }
                                                     }
                                                 }
