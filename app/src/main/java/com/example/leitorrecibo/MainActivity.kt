@@ -12,7 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.leitorrecibo.ui.screens.HomeScreen
 import com.example.leitorrecibo.ui.screens.QrCodeScreen
-import com.example.leitorrecibo.ui.screens.ResultScreen
+import com.example.leitorrecibo.ui.screens.result.ResultScreen
 import com.example.leitorrecibo.ui.theme.LeitorReciboTheme
 
 class MainActivity : ComponentActivity() {

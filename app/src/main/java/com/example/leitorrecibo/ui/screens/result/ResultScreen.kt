@@ -1,9 +1,11 @@
-package com.example.leitorrecibo.ui.screens
+package com.example.leitorrecibo.ui.screens.result
 
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,39 +18,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.leitorrecibo.data.local.database.AppDatabase
-import com.example.leitorrecibo.domain.models.Produto
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.leitorrecibo.utils.extrairDadosDoHtml
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultScreen(data: String, onBack: () -> Unit) {
+fun ResultScreen(
+    data: String,
+    onBack: () -> Unit,
+    viewModel: ResultViewModel = viewModel() // Instancia o ViewModel
+) {
     val uriHandler = LocalUriHandler.current
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var isLoading by remember { mutableStateOf(true) }
-    var listaProdutos by remember { mutableStateOf<List<Produto>>(emptyList()) }
-    var dadosSalvos by remember { mutableStateOf(false) }
+    // Observa o estado da UI gerido pelo ViewModel
+    val uiState by viewModel.uiState.collectAsState()
 
     val urlSegura = data.replace("http://", "https://").replace("|", "%7C")
 
-    // 1. PACIÊNCIA EXTREMA: Espera até 60 segundos antes de desistir do site da SEFAZ
-    LaunchedEffect(Unit) {
-        delay(60000)
-        if (isLoading) {
-            isLoading = false
-        }
-    }
+    val progressoAnimado by animateFloatAsState(
+        targetValue = uiState.progresso,
+        animationSpec = tween(durationMillis = 800),
+        label = "progress_anim"
+    )
 
     Scaffold(
         topBar = {
@@ -90,23 +89,40 @@ fun ResultScreen(data: String, onBack: () -> Unit) {
             Text("Produtos Extraídos:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (uiState.isLoading) {
+                // UI de Carregamento
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = Color(0xFF1A237E))
+                        LinearProgressIndicator(
+                            progress = { progressoAnimado },
+                            modifier = Modifier.fillMaxWidth(0.8f).height(8.dp),
+                            color = Color(0xFF1A237E),
+                            trackColor = Color(0xFFE0E0E0),
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = uiState.mensagemStatus,
+                            color = Color.DarkGray,
+                            fontWeight = FontWeight.Medium
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("A ligar aos servidores da SEFAZ...", color = Color.Gray)
-                        Text("Isto pode demorar um pouco.", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = "${(progressoAnimado * 100).toInt()}%",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
 
-                // O NAVEGADOR INVISÍVEL (Agora com 1 pixel transparente para o Android não o adormecer)
+                // NAVEGADOR INVISÍVEL
                 AndroidView(
                     factory = { ctx ->
                         WebView(ctx).apply {
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
                             settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                            settings.loadsImagesAutomatically = false
+                            settings.blockNetworkImage = true
 
                             webViewClient = object : WebViewClient() {
                                 var iniciouVerificacao = false
@@ -119,8 +135,8 @@ fun ResultScreen(data: String, onBack: () -> Unit) {
 
                                     val runnable = object : Runnable {
                                         override fun run() {
-                                            // Só para de procurar quando o ecrã sair do estado de Loading
-                                            if (!isLoading) return
+                                            // Se o ViewModel já disse que não está a carregar, para o loop
+                                            if (!uiState.isLoading) return
 
                                             view.evaluateJavascript(
                                                 "(function() { return document.documentElement.outerHTML; })();"
@@ -130,43 +146,33 @@ fun ResultScreen(data: String, onBack: () -> Unit) {
                                                         .replace("\\u003C", "<")
                                                         .replace("\\\"", "\"")
 
-                                                    // ANALISA DIRETAMENTE EM SEGUNDO PLANO
                                                     coroutineScope.launch {
                                                         val produtosEncontrados = extrairDadosDoHtml(cleanHtml)
-
                                                         if (produtosEncontrados.isNotEmpty()) {
-                                                            listaProdutos = produtosEncontrados
-                                                            isLoading = false // Para a bolinha!
-
-                                                            if (!dadosSalvos) {
-                                                                dadosSalvos = true
-                                                                val banco = AppDatabase.getDatabase(context)
-                                                                banco.produtoDao().inserirVarios(produtosEncontrados)
-                                                                println("💾 DADOS SALVOS COM SUCESSO NO ROOM!")
-                                                            }
+                                                            // DELEGA PARA O VIEWMODEL
+                                                            viewModel.onProdutosExtraidos(produtosEncontrados)
                                                         }
                                                     }
                                                 }
                                             }
-                                            // Tenta novamente a cada 2 segundos, SEM LIMITE de tentativas!
-                                            handler.postDelayed(this, 2000)
+                                            handler.postDelayed(this, 800)
                                         }
                                     }
-                                    handler.postDelayed(runnable, 2000)
+                                    handler.postDelayed(runnable, 800)
                                 }
                             }
                             loadUrl(urlSegura)
                         }
                     },
-                    modifier = Modifier.size(1.dp).alpha(0f) // Truque do 1 pixel transparente!
+                    modifier = Modifier.size(1.dp).alpha(0f)
                 )
 
             } else {
-                if (listaProdutos.isEmpty()) {
+                if (uiState.erroTimeout || uiState.listaProdutos.isEmpty()) {
                     Text("Nenhum produto encontrado. A nota expirou ou a Sefaz não respondeu a tempo.", color = Color.Gray)
                 } else {
                     LazyColumn {
-                        items(listaProdutos) { produto ->
+                        items(uiState.listaProdutos) { produto ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
